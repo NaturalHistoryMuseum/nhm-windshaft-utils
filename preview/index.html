@@ -6,7 +6,7 @@
     <script src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
     <script src="leaflet.js"></script>
-    <script src="wax.leaf.min.js"></script>
+    <script src="leaflet.utfgrid.js"></script>
 
     <script>
         $(document).ready(function(){
@@ -22,6 +22,19 @@
                 formatter: function(options, data) { return data._id + "/" + data.species + "/" + data.scientific_name }
             };
 
+            var info = L.control();
+            info.options.position = 'bottomright';
+            info.onAdd = function (map) {
+              this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+              this.update();
+              return this._div;
+            };
+
+            info.update = function (props) {
+              this._div.innerHTML = "<h4>Botany Records</h4>" + (props ?
+              "<b>" + props.data.species + "</b><br />" + props.data._id+"<br />"+ props.data.scientific_name
+              : 'Hover over a marker');
+            };
 
             $('#update_map').click(function(ev){
                 ev.preventDefault();
@@ -32,23 +45,26 @@
                 var url = _.template(baseURL, {dbname: dbname, table: table});
 
                 tilejson.tiles = [url + '.png'];
-                tilejson.grids = [url + '.grid.json'];
+                tilejson.grids = [url + '.grid.json?callback={cb}'];
 
                 _.each(layers, function(layer){
                     map.removeLayer(layer)
                 });
 
-                var testMap = new wax.leaf.connector(tilejson);
-                map.addLayer(testMap);
-                map.setView(new L.LatLng(51.505, -0.09), 2, true);
-                wax.leaf.interaction(map, tilejson);
-                layers.push(testMap);
+                var testMap = L.tileLayer(tilejson.tiles[0]).addTo(map);
+                map.setView(new L.LatLng(51.505, -0.09), 4, true);
+                var utfGrid = new L.UtfGrid(tilejson.grids[0], {
+                  resolution: 4
+                });
+                utfGrid.on('mouseover', function(e){ info.update(e);}).on('mouseout', function(e){ info.update();})
+                map.addLayer(utfGrid);
+                map.addControl(info);
             });
         });
     </script>
 
     <link rel="stylesheet" href="leaflet.css" />
-    <!--[if lte IE 8]><link rel="stylesheet" href="../dist/leaflet.ie.css" /><![endif]-->
+    <link rel="stylesheet" href="maps.css" />
 </head>
 <body>
 <input type="text" value="nhm_botany" id="dbname">
