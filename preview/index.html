@@ -14,6 +14,7 @@
             var baseURL = "http://localhost:4000/database/<%= dbname %>/table/<%= table %>/{z}/{x}/{y}";
 
             var layers = [];
+            var controls = [];
             var tilejson = {
                 tilejson: '1.0.0',
                 scheme: 'xyz',
@@ -59,6 +60,13 @@
                     map.removeLayer(layer)
                 });
 
+                _.each(controls, function(control) {
+                  map.removeControl(control)
+                });
+
+                layers = [];
+                controls = [];
+
                 var testMap = L.tileLayer(tilejson.tiles[0]).addTo(map);
                 map.setView(new L.LatLng(51.505, -0.09), 4, true);
                 var utfGrid = new L.UtfGrid(tilejson.grids[0], {
@@ -67,6 +75,10 @@
                 utfGrid.on('mouseover', function(e){ info.update(e);}).on('mouseout', function(e){ info.update();})
                 map.addLayer(utfGrid);
                 map.addControl(info);
+
+                controls.push(info);
+                layers.push(utfGrid);
+                layers.push(testMap);
             });
         });
     </script>
