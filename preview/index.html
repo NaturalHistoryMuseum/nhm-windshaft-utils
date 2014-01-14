@@ -41,11 +41,19 @@
 
                 var dbname = $('#dbname').val();
                 var table = $('#table').val();
+                var sub_collection = $('#sub_collection').val();
 
                 var url = _.template(baseURL, {dbname: dbname, table: table});
 
-                tilejson.tiles = [url + '.png'];
-                tilejson.grids = [url + '.grid.json?callback={cb}'];
+                var sql = "";
+                if (sub_collection) {
+                  sql = "select * from botany_all where collection_sub_department = '"+sub_collection+"'";
+                  tilejson.tiles = [url + '.png?sql=' + sql];
+                  tilejson.grids = [url + '.grid.json?callback={cb}&sql=' + sql];
+                } else {
+                  tilejson.tiles = [url + '.png'];
+                  tilejson.grids = [url + '.grid.json?callback={cb}'];
+                }
 
                 _.each(layers, function(layer){
                     map.removeLayer(layer)
@@ -69,6 +77,12 @@
 <body>
 <input type="text" value="nhm_botany" id="dbname">
 <input type="text" value="botany_all" id="table">
+<select id="sub_collection">
+  <option />
+  <option value="Bryophytes">Bryophytes</option>
+  <option value="Algae">Algae</option>
+  <option value="Ferns">Ferns</option>
+</select>
 <input type="button" id="update_map" value="Go">
 <div id="map" style="width: 1500px; height: 900px"></div>
 </body>
