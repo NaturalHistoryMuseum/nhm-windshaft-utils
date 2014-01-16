@@ -49,18 +49,31 @@
 
                 var url = _.template(baseURL, {dbname: dbname, table: table});
 
-                var sql = "";
+                var tiles_url = url + '.png'
+                var grids_url = url + '.grid.json?callback={cb}'
+
+                var tile_params = {}
+                var grid_params = {}
+
                 if (sub_collection) {
-                  sql = "select * from botany_all where collection_sub_department = '"+sub_collection+"'";
-                  tilejson.tiles = [url + '.png?sql=' + sql];
-                  tilejson.grids = [url + '.grid.json?callback={cb}&sql=' + sql];
-                } else {
-                  tilejson.tiles = [url + '.png'];
-                  tilejson.grids = [url + '.grid.json?callback={cb}'];
+                  tile_params["sql"] = "select * from botany_all where collection_sub_department = '"+sub_collection+"'";
+                  grid_params["sql"] = "select * from botany_all where collection_sub_department = '"+sub_collection+"'";
                 }
 
                 if (style) {
-                  tilejson.tiles[0] = tilejson.tiles[0] + "&style=%40colora%3A+%23ffffb2%3B+%40colorb%3A+%23fecc5c%3B+%40colorc%3A+%23fd8d3c%3B+%40colord%3A+%23f03b20%3B+%40colore%3A+%23bd0026%3B++%23botany_all+%7B+++marker-width%3A+10%3B+++marker-line-width%3A+0.8%3B+++marker-line-color%3A+white%3B+++marker-fill%3A+%23bbb%3B+++marker-allow-overlap%3A+true%3B+++%5Bscientific_name_author_year+%3D~+'17.*'%5D%3A%3Aoverlay+%7B+++++marker-fill%3A+%40colorb%3B+++++marker-width%3A+12%3B+++++marker-allow-overlap%3A+true%3B+++++marker-line-width%3A+0.8%3B+++++marker-line-color%3A+white%3B+++%7D+++%5Bscientific_name_author_year+%3D~+'18.*'%5D%3A%3Aoverlay+%7B+++++marker-fill%3A+%40colorc%3B+++++marker-width%3A+12%3B+++++marker-allow-overlap%3A+true%3B+++++marker-line-width%3A+0.8%3B+++++marker-line-color%3A+white%3B+++%7D+++%5Bscientific_name_author_year+%3D~+'19.*'%5D%3A%3Aoverlay+%7B+++++marker-fill%3A+%40colord%3B+++++marker-width%3A+12%3B+++++marker-allow-overlap%3A+true%3B+++++marker-line-width%3A+0.8%3B+++++marker-line-color%3A+white%3B+++%7D+++%5Bscientific_name_author_year+%3D~+'20.*'%5D%3A%3Aoverlay+%7B+++++marker-fill%3A+%40colore%3B+++++marker-width%3A+12%3B+++++marker-allow-overlap%3A+true%3B+++++marker-line-width%3A+0.8%3B+++++marker-line-color%3A+white%3B+++%7D+%7D";
+                  tile_params["style"] = "@colora: #ffffb2;@colorb: #fecc5c;@colorc: #fd8d3c;@colord: #f03b20;@colore: #bd0026;#botany_all {  marker-width: 10;  marker-line-width: 0.8;  marker-line-color: white;  marker-fill: #bbb;  marker-allow-overlap: true;  [scientific_name_author_year =~ '17.*']::overlay {    marker-fill: @colorb;    marker-width: 12;    marker-allow-overlap: true;    marker-line-width:0.8;    marker-line-color: white;  }  [scientific_name_author_year =~ '18.*']::overlay {    marker-fill: @colorc;    marker-width: 12;    marker-allow-overlap: true;    marker-line-width: 0.8;    marker-line-color: white;  }  [scientific_name_author_year =~ '19.*']::overlay {    marker-fill: @colord;    marker-width: 12;    marker-allow-overlap: true;    marker-line-width: 0.8;    marker-line-color: white;  }  [scientific_name_author_year =~ '20.*']::overlay {    marker-fill: @colore;    marker-width: 12;    marker-allow-overlap: true;    marker-line-width: 0.8;    marker-line-color: white;  }}";
+                }
+
+                if ($.isEmptyObject(tile_params)) {
+                  tilejson.tiles = [tiles_url];
+                } else {
+                  tilejson.tiles = [tiles_url + "?" + $.param(tile_params)];
+                }
+
+                if ($.isEmptyObject(grid_params)) {
+                  tilejson.grids = [grids_url];
+                } else {
+                  tilejson.grids = [grids_url + "&" + $.param(grid_params)];
                 }
 
                 _.each(layers, function(layer){
