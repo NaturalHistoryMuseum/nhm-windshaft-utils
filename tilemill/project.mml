@@ -12,8 +12,8 @@
   ],
   "format": "png",
   "interactivity": {
-    "layer": "botany",
-    "template_teaser": "{{{_id}}} {{{scientific_name}}}",
+    "layer": "gridded",
+    "template_teaser": "{{{name}}} {{{id}}} {{{count}}}",
     "fields": [
       "_id",
       "scientific_name"
@@ -65,7 +65,7 @@
       "status": "off"
     },
     {
-      "geometry": "point",
+      "geometry": "unknown",
       "extent": [
         -180,
         -85.051,
@@ -74,7 +74,7 @@
       ],
       "Datasource": {
         "type": "postgis",
-        "table": "(SELECT\n    array_agg(_id) AS ids,\n    COUNT( geom ) AS count,\n    ST_Centroid(ST_Collect( geom ) ) AS center\nFROM botany_all\nGROUP BY\n    ST_SnapToGrid( geom, 1, 1)\nORDER BY\n    count DESC\n) as centroids",
+        "table": "(select names[1] as name,\nids[1] as id,\ncount,\ncenter\n from\n(SELECT\n    array_agg(scientific_name) as names,\n    array_agg(_id) AS ids,\n    COUNT( geom ) AS count,\n    ST_SnapToGrid( geom, 0.1, 0.1)  AS center\nFROM botany_all\nWHERE st_intersects(geom, st_setsrid(!bbox!, 4326))\nGROUP BY\n    ST_SnapToGrid( geom, 0.1, 0.1)\nORDER BY\n    count DESC\n) as sub\n) as gridded",
         "key_field": "",
         "geometry_field": "center",
         "extent_cache": "custom",
@@ -89,8 +89,7 @@
       "srs-name": "WGS84",
       "srs": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
       "advanced": {},
-      "name": "gridded",
-      "status": "off"
+      "name": "gridded"
     },
     {
       "geometry": "point",
@@ -139,7 +138,26 @@
       "srs-name": "WGS84",
       "srs": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
       "advanced": {},
-      "name": "botany-year"
+      "name": "botany-year",
+      "status": "off"
+    },
+    {
+      "geometry": "linestring",
+      "extent": [
+        -180,
+        -85.051,
+        180,
+        83.634100653
+      ],
+      "id": "grid",
+      "class": "",
+      "Datasource": {
+        "file": "data/grid.shp"
+      },
+      "srs-name": "autodetect",
+      "srs": "",
+      "advanced": {},
+      "name": "grid"
     }
   ],
   "scale": 1,

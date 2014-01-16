@@ -86,3 +86,9 @@ Map {
   }
   opacity: 0.8;
 }
+
+
+#grid {
+  line-width:1;
+  line-color:#168;
+}
