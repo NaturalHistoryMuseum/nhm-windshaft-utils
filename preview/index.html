@@ -35,7 +35,7 @@
 
             info.update = function (props) {
               this._div.innerHTML = "<h4>Botany Records</h4>" + (props ?
-              "<b>" + props.data.species + "</b><br />" + props.data._id+"<br />"+ props.data.scientific_name
+              "<b>" + props.data.species + "</b><br />" + props.data._id+"<br />"+ props.data.scientific_name + "<br/>" + props.data.count + " records overlapping"
               : 'Hover over a marker');
             };
 
@@ -49,16 +49,29 @@
 
                 var url = _.template(baseURL, {dbname: dbname, table: table});
 
-                var tiles_url = url + '.png'
-                var grids_url = url + '.grid.json?callback={cb}'
+                var tiles_url = url + '.png';
+                var grids_url = url + '.grid.json?callback={cb}';
 
-                var tile_params = {}
-                var grid_params = {}
+                var tile_params = {};
+                var grid_params = {};
+
+                var where = "";
 
                 if (sub_collection) {
                   tile_params["sql"] = "select * from botany_all where collection_sub_department = '"+sub_collection+"'";
-                  grid_params["sql"] = "select * from botany_all where collection_sub_department = '"+sub_collection+"'";
+                  where = "AND collection_sub_department = '"+sub_collection+"' ";
                 }
+
+                var grid_sql = "select names[1] as scientific_name, ids[1] as _id, species[1] as species, count, center as the_geom_webmercator" +
+                  " from " +
+                  "(SELECT array_agg(scientific_name) as names, array_agg(_id) AS ids, array_agg(species) as species, COUNT( geom ) AS count, ST_SnapToGrid( the_geom_webmercator, 1000, 1000) AS center " +
+                  "FROM botany_all WHERE st_intersects(the_geom_webmercator, st_setsrid(!bbox!, 3857)) " +
+                  where +
+                  "GROUP BY ST_SnapToGrid( the_geom_webmercator, 1000, 1000) " +
+                  "ORDER BY count DESC ) as sub "
+                  //") as gridded";
+
+                grid_params["sql"] = grid_sql;
 
                 if (style) {
                   tile_params["style"] = "@colora: #ffffb2;@colorb: #fecc5c;@colorc: #fd8d3c;@colord: #f03b20;@colore: #bd0026;#botany_all {  marker-width: 10;  marker-line-width: 0.8;  marker-line-color: white;  marker-fill: #bbb;  marker-allow-overlap: true;  [scientific_name_author_year =~ '17.*']::overlay {    marker-fill: @colorb;    marker-width: 12;    marker-allow-overlap: true;    marker-line-width:0.8;    marker-line-color: white;  }  [scientific_name_author_year =~ '18.*']::overlay {    marker-fill: @colorc;    marker-width: 12;    marker-allow-overlap: true;    marker-line-width: 0.8;    marker-line-color: white;  }  [scientific_name_author_year =~ '19.*']::overlay {    marker-fill: @colord;    marker-width: 12;    marker-allow-overlap: true;    marker-line-width: 0.8;    marker-line-color: white;  }  [scientific_name_author_year =~ '20.*']::overlay {    marker-fill: @colore;    marker-width: 12;    marker-allow-overlap: true;    marker-line-width: 0.8;    marker-line-color: white;  }}";
