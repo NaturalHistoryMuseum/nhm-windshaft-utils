@@ -45,6 +45,7 @@
                 var dbname = $('#dbname').val();
                 var table = $('#table').val();
                 var sub_collection = $('#sub_collection').val();
+                var style = $('#style_toggle').is(':checked');
 
                 var url = _.template(baseURL, {dbname: dbname, table: table});
 
@@ -56,6 +57,10 @@
                 } else {
                   tilejson.tiles = [url + '.png'];
                   tilejson.grids = [url + '.grid.json?callback={cb}'];
+                }
+
+                if (style) {
+                  tilejson.tiles[0] = tilejson.tiles[0] + "&style=%40colora%3A+%23ffffb2%3B+%40colorb%3A+%23fecc5c%3B+%40colorc%3A+%23fd8d3c%3B+%40colord%3A+%23f03b20%3B+%40colore%3A+%23bd0026%3B++%23botany_all+%7B+++marker-width%3A+10%3B+++marker-line-width%3A+0.8%3B+++marker-line-color%3A+white%3B+++marker-fill%3A+%23bbb%3B+++marker-allow-overlap%3A+true%3B+++%5Bscientific_name_author_year+%3D~+'17.*'%5D%3A%3Aoverlay+%7B+++++marker-fill%3A+%40colorb%3B+++++marker-width%3A+12%3B+++++marker-allow-overlap%3A+true%3B+++++marker-line-width%3A+0.8%3B+++++marker-line-color%3A+white%3B+++%7D+++%5Bscientific_name_author_year+%3D~+'18.*'%5D%3A%3Aoverlay+%7B+++++marker-fill%3A+%40colorc%3B+++++marker-width%3A+12%3B+++++marker-allow-overlap%3A+true%3B+++++marker-line-width%3A+0.8%3B+++++marker-line-color%3A+white%3B+++%7D+++%5Bscientific_name_author_year+%3D~+'19.*'%5D%3A%3Aoverlay+%7B+++++marker-fill%3A+%40colord%3B+++++marker-width%3A+12%3B+++++marker-allow-overlap%3A+true%3B+++++marker-line-width%3A+0.8%3B+++++marker-line-color%3A+white%3B+++%7D+++%5Bscientific_name_author_year+%3D~+'20.*'%5D%3A%3Aoverlay+%7B+++++marker-fill%3A+%40colore%3B+++++marker-width%3A+12%3B+++++marker-allow-overlap%3A+true%3B+++++marker-line-width%3A+0.8%3B+++++marker-line-color%3A+white%3B+++%7D+%7D";
                 }
 
                 _.each(layers, function(layer){
@@ -96,6 +101,7 @@
   <option value="Algae">Algae</option>
   <option value="Ferns">Ferns</option>
 </select>
+<input type="checkbox" id="style_toggle">
 <input type="button" id="update_map" value="Go">
 <div id="map" style="width: 1500px; height: 900px"></div>
 </body>
