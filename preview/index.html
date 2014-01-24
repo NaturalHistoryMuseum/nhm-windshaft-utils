@@ -39,6 +39,12 @@
               : 'Hover over a marker');
             };
 
+            $('#zoom_to_uk').click(function(ev){
+                ev.preventDefault();
+
+                map.fitBounds([[48,-10],[59,2]]);
+            });
+
             $('#update_map').click(function(ev){
                 ev.preventDefault();
 
@@ -130,6 +136,7 @@
 <input type="checkbox" id="style_toggle">
 <label for="style_toggle">Colour by year</label>
 <input type="button" id="update_map" value="Go">
+<input type="button" id="zoom_to_uk" value="UK">
 <div id="map" style="width: 1500px; height: 900px"></div>
 </body>
 </html>
