@@ -10,7 +10,7 @@
 
     <script>
         $(document).ready(function(){
-            var map = new L.Map('map');
+            var map = new L.Map('map', {minZoom: 2});
             map.setView(new L.LatLng(51.505, -0.09), 4, true);
             L.tileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', { opacity: 0.8 }).addTo(map);
             var baseURL = "http://localhost:4000/database/<%= dbname %>/table/<%= table %>/{z}/{x}/{y}";
