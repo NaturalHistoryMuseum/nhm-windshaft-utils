@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NHM Collection preview</title>
+    <meta charset="utf-8" />
+    <script src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+    <script src="leaflet.js"></script>
+    <script src="leaflet.utfgrid.js"></script>
+
+    <script>
+        $(document).ready(function(){
+            var map = new L.Map('map', {minZoom: 2});
+            map.setView(new L.LatLng(51.505, -0.09), 4, true);
+            L.tileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', { opacity: 0.8 }).addTo(map);
+            var baseURL = "http://localhost:4000/database/<%= dbname %>/table/<%= table %>/{z}/{x}/{y}";
+
+            var layers = [];
+            var controls = [];
+            var tilejson = {
+                tilejson: '1.0.0',
+                scheme: 'xyz',
+                tiles: [],
+                grids: [],
+                formatter: function(options, data) { return data._id + "/" + data.species + "/" + data.scientific_name }
+            };
+
+            var info = L.control();
+            info.options.position = 'bottomright';
+            info.onAdd = function (map) {
+              this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+              this.update();
+              return this._div;
+            };
+
+            info.update = function (props) {
+              this._div.innerHTML = "<h4>Botany Records</h4>" + (props ?
+              "<b>" + props.data.species + "</b><br />" + props.data._id+"<br />"+ props.data.scientific_name + "<br/>" + props.data.count + " records overlapping"
+              : 'Hover over a marker');
+            };
+
+            $('#update_map').click(function(ev){
+                ev.preventDefault();
+
+                var dbname = $('#dbname').val();
+                var table = $('#table').val();
+                var sub_collection = $('#sub_collection').val();
+                var style = $('#style_toggle').is(':checked');
+
+                var url = _.template(baseURL, {dbname: dbname, table: table});
+
+                var tiles_url = url + '.png';
+                var grids_url = url + '.grid.json?callback={cb}';
+
+                var tile_params = {};
+                var grid_params = {};
+
+                var where = "";
+
+                if (sub_collection) {
+                  tile_params["sql"] = "select * from botany_all where collection_sub_department = '"+sub_collection+"'";
+                  where = "AND collection_sub_department = '"+sub_collection+"' ";
+                }
+
+                var grid_sql = "select names[1] as scientific_name, ids[1] as _id, species[1] as species, count, center as the_geom_webmercator" +
+                  " from " +
+                  "(SELECT array_agg(scientific_name) as names, array_agg(_id) AS ids, array_agg(species) as species, COUNT( geom ) AS count, ST_SnapToGrid( the_geom_webmercator, 1000, 1000) AS center " +
+                  "FROM botany_all WHERE st_intersects(the_geom_webmercator, st_setsrid(!bbox!, 3857)) " +
+                  where +
+                  "GROUP BY ST_SnapToGrid( the_geom_webmercator, 1000, 1000) " +
+                  "ORDER BY count DESC ) as sub "
+                  //") as gridded";
+
+                grid_params["sql"] = grid_sql;
+
+                if (true) {
+                  tile_params["style"] = "@size: 20;  #botany_all[zoom >= 4] {   marker-file: url('http://thunderflames.org/temp/marker.svg');   marker-allow-overlap: true;   marker-opacity: 0.2;   marker-width: @size;   marker-height: @size;   marker-clip: false;   image-filters: colorize-alpha(blue, cyan, green, yellow , orange, red);   opacity: 0.8;   [zoom >= 7] {     marker-width: @size * 2;     marker-height: @size * 2;   } }";
+                }
+
+
+
+                if ($.isEmptyObject(tile_params)) {
+                  tilejson.tiles = [tiles_url];
+                } else {
+                  tilejson.tiles = [tiles_url + "?" + $.param(tile_params)];
+                }
+
+                if ($.isEmptyObject(grid_params)) {
+                  tilejson.grids = [grids_url];
+                } else {
+                  tilejson.grids = [grids_url + "&" + $.param(grid_params)];
+                }
+
+                _.each(layers, function(layer){
+                    map.removeLayer(layer)
+                });
+
+                _.each(controls, function(control) {
+                  map.removeControl(control)
+                });
+
+                layers = [];
+                controls = [];
+
+                var testMap = L.tileLayer(tilejson.tiles[0]).addTo(map);
+                var utfGrid = new L.UtfGrid(tilejson.grids[0], {
+                  resolution: 4
+                });
+                utfGrid.on('mouseover', function(e){ info.update(e);}).on('mouseout', function(e){ info.update();})
+                map.addLayer(utfGrid);
+                map.addControl(info);
+
+                controls.push(info);
+                layers.push(utfGrid);
+                layers.push(testMap);
+            });
+        });
+    </script>
+
+    <link rel="stylesheet" href="leaflet.css" />
+    <link rel="stylesheet" href="maps.css" />
+</head>
+<body>
+<input type="text" value="nhm_botany" id="dbname">
+<input type="text" value="botany_all" id="table">
+<select id="sub_collection">
+  <option value="">All</option>
+  <option value="Bryophytes">Bryophytes</option>
+  <option value="Algae">Algae</option>
+  <option value="Ferns">Ferns</option>
+</select>
+<input type="button" id="update_map" value="Go">
+<div id="map" style="width: 1500px; height: 900px"></div>
+</body>
+</html>
