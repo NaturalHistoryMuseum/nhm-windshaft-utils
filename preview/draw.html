@@ -12,10 +12,19 @@
 
     <script>
         $(document).ready(function(){
-            var map = new L.Map('map', {minZoom: 2, drawControl: true});
+            var map = new L.Map('map', { minZoom: 2 });
             map.setView(new L.LatLng(51.505, -0.09), 4, true);
             L.tileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', { opacity: 0.8 }).addTo(map);
             var baseURL = "http://localhost:4000/database/<%= dbname %>/table/<%= table %>/{z}/{x}/{y}";
+
+            var drawControl = new L.Control.Draw({
+              draw: {
+                polyline: false,
+                marker: false,
+                circle: false
+              }
+            });
+            map.addControl(drawControl);
 
             var layers = [];
             var drawLayer = null;
@@ -34,7 +43,6 @@
               if (drawLayer) {
                 map.removeLayer(drawLayer);
               }
-              console.log("foo");
               map.addLayer(layer);
               drawLayer = layer;
             });
@@ -65,7 +73,6 @@
                   var geojson = drawLayer.toGeoJSON();
                   var wkt = Terraformer.WKT.convert(geojson.geometry);
                   tile_params["sql"] += " AND st_intersects(the_geom_webmercator, st_transform(st_setsrid(st_geomfromtext('" + wkt + "'), 4326),3857)) ";
-                  console.log(tile_params["sql"]);
                 }
 
                 if ($.isEmptyObject(tile_params)) {
