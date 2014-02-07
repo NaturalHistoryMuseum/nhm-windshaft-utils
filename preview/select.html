@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NHM Collection preview</title>
+    <meta charset="utf-8" />
+    <script src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+    <script src="leaflet-src.js"></script>
+    <script src="leaflet.draw.js"></script>
+    <script src="terraformer.min.js"></script>
+    <script src="terraformer-wkt-parser.min.js"></script>
+    <script src="countries.geojson"></script>
+
+    <script>
+        $(document).ready(function(){
+            var map = new L.Map('map', { minZoom: 2 });
+            map.setView(new L.LatLng(51.505, -0.09), 4, true);
+            L.tileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', { opacity: 0.8 }).addTo(map);
+            var baseURL = "http://localhost:4000/database/<%= dbname %>/table/<%= table %>/{z}/{x}/{y}";
+
+            var drawControl = new L.Control.Draw({
+              draw: {
+                polyline: false,
+                marker: false,
+                circle: false
+              }
+            });
+            map.addControl(drawControl);
+
+            var layers = [];
+            var drawLayer = null;
+            var countryLayer = null;
+
+            var tilejson = {
+                tilejson: '1.0.0',
+                scheme: 'xyz',
+                tiles: [],
+                grids: [],
+                formatter: function(options, data) { return data._id + "/" + data.species + "/" + data.scientific_name }
+            };
+
+            map.on('draw:created', function (e) {
+              var type = e.layerType;
+              var layer = e.layer;
+              if (drawLayer) {
+                map.removeLayer(drawLayer);
+              }
+              map.addLayer(layer);
+              drawLayer = layer;
+            });
+
+            var colours = ['rgb(166,206,227)','rgb(31,120,180)','rgb(178,223,138)','rgb(51,160,44)','rgb(251,154,153)','rgb(227,26,28)','rgb(253,191,111)','rgb(255,127,0)','rgb(202,178,214)'];
+
+//             L.geoJson(countries, {
+//               style: function (feature) {
+//                 return {color: colours[feature.properties.mapcolor9 - 1]};
+//               },
+//               onEachFeature: function (feature, layer) {
+//                 layer.bindPopup(feature.properties.description);
+//               }
+//             }).addTo(map);
+
+            var chooser = L.control({position: 'topleft'});
+
+
+            $.each(countries[0].features, function(index, feature) {
+              $('#countries').append('<option value="' + index + '">' + feature.properties.name + '</option>');
+            });
+
+
+            $('#update_map').click(function(ev){
+                ev.preventDefault();
+
+                var dbname = $('#dbname').val();
+                var table = $('#table').val();
+                var sub_collection = $('#sub_collection').val();
+                var style = $('#style_toggle').is(':checked');
+                var country = $('#countries').val();
+
+                var url = _.template(baseURL, {dbname: dbname, table: table});
+
+                var tiles_url = url + '.png';
+                var grids_url = url + '.grid.json?callback={cb}';
+
+                var tile_params = {};
+                var grid_params = {};
+
+                if (sub_collection) {
+                  tile_params["sql"] = "select * from botany_all where collection_sub_department = '"+sub_collection+"'";
+                } else {
+                  tile_params["sql"] = "select * from botany_all where 1 = 1"; // so that we can do "AND ... " later
+                }
+
+                if (true) {
+                  if(countryLayer) {
+                    map.removeLayer(countryLayer);
+                  }
+                  var geojson = countries[0].features[country];
+                  var wkt = Terraformer.WKT.convert(geojson.geometry);
+                  tile_params["sql"] += " AND st_intersects(the_geom_webmercator, st_transform(st_setsrid(st_geomfromtext('" + wkt + "'), 4326),3857)) ";
+                  countryLayer = L.geoJson(geojson, {style: function(feature) { return { fillOpacity: 0.1 }}});
+                  countryLayer.addTo(map);
+                  map.fitBounds(countryLayer);
+                }
+
+                if ($.isEmptyObject(tile_params)) {
+                  tilejson.tiles = [tiles_url];
+                } else {
+                  tilejson.tiles = [tiles_url + "?" + $.param(tile_params)];
+                }
+
+                _.each(layers, function(layer){
+                    map.removeLayer(layer)
+                });
+
+                layers = [];
+
+                var testMap = L.tileLayer(tilejson.tiles[0]).addTo(map);
+
+                layers.push(testMap);
+            });
+        });
+    </script>
+
+    <link rel="stylesheet" href="leaflet.css" />
+    <link rel="stylesheet" href="leaflet.draw.css" />
+    <link rel="stylesheet" href="maps.css" />
+</head>
+<body>
+<input type="text" value="nhm_botany" id="dbname">
+<input type="text" value="botany_all" id="table">
+<select id="sub_collection">
+  <option value="">All</option>
+  <option value="Bryophytes">Bryophytes</option>
+  <option value="Algae">Algae</option>
+  <option value="Ferns">Ferns</option>
+</select>
+<select id="countries" />
+<input type="button" id="update_map" value="Go">
+<div id="map" style="width: 1500px; height: 900px"></div>
+</body>
+</html>
