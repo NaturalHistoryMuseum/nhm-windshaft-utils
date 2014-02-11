@@ -17,3 +17,11 @@ We need to use a patched version of mapnik-reference in order to make the colori
 https://github.com/mapnik/mapnik-reference/pull/57
 
 The dependencies are nhm-windshaft-app -> windshaft -> grainstore -> mapnik-reference: "~5.0.4". Assuming the pull request ends up in a 5.0.x release, nothing else will need changing.
+
+## application_nodejs cookbook
+
+We're using a patched version of the application_nodejs cookbook, to work around an unfixed bug in the code
+
+https://github.com/conradev/application_nodejs/issues/4
+
+When this is fixed, we can remove the entry from nhm-windshaft-chef/Berksfile and just use the standard version.
